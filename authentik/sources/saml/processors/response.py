@@ -128,7 +128,7 @@ class ResponseProcessor:
             return
         message = status.find(f"{{{NS_SAML_PROTOCOL}}}StatusMessage")
         if message is not None:
-            raise ValueError(message.text)
+            raise ValueError(self._root_xml)
 
     def _handle_name_id_transient(self) -> SourceFlowManager:
         """Handle a NameID with the Format of Transient. This is a bit more complex than other
@@ -168,18 +168,23 @@ class ResponseProcessor:
         assertion = self._root.find(f"{{{NS_SAML_ASSERTION}}}Assertion")
         if assertion is None:
             raise ValueError("Assertion element not found")
+            # raise ValueError(self._root_xml)
         subject = assertion.find(f"{{{NS_SAML_ASSERTION}}}Subject")
         if subject is None:
             raise ValueError("Subject element not found")
         name_id = subject.find(f"{{{NS_SAML_ASSERTION}}}NameID")
         if name_id is None:
             raise ValueError("NameID element not found")
+        LOGGER.info(f"_get_name_id(): {name_id}")
+        LOGGER.info(f"_get_name_id().text: {name_id.text}")
+        LOGGER.info("_get_name_id().attrib['Format']: " + name_id.attrib["Format"])
         return name_id
 
     def _get_name_id_filter(self) -> dict[str, str]:
         """Returns the subject's NameID as a Filter for the `User`"""
         name_id_el = self._get_name_id()
         name_id = name_id_el.text
+        LOGGER.info(f"_get_name_id_filter(): {name_id}")
         if not name_id:
             raise UnsupportedNameIDFormat("Subject's NameID is empty.")
         _format = name_id_el.attrib["Format"]
@@ -203,7 +208,8 @@ class ResponseProcessor:
         attributes = {}
         assertion = self._root.find(f"{{{NS_SAML_ASSERTION}}}Assertion")
         if assertion is None:
-            raise ValueError("Assertion element not found")
+            # raise ValueError("Assertion element not found")
+            raise ValueError(self._root_xml)
         attribute_statement = assertion.find(f"{{{NS_SAML_ASSERTION}}}AttributeStatement")
         if attribute_statement is None:
             raise ValueError("Attribute statement element not found")
