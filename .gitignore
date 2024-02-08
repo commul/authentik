@@ -209,3 +209,8 @@ source_docs/
 
 ### Golang ###
 /vendor/
+
+
+###
+.*.swp
+.*.swo
