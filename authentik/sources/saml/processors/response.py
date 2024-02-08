@@ -163,8 +163,36 @@ class ResponseProcessor:
             delete_none_values(self.get_attributes()),
         )
 
+    def _decrypt_response(self):
+        """Decrypt SAMLResponse EncryptedAssertion Element"""
+
+        manager = xmlsec.KeysManager()
+        key = xmlsec.Key.from_memory(
+            self._source.signing_kp.key_data,
+            xmlsec.constants.KeyDataFormatPem,
+        )
+
+        manager.add_key(key)
+        encryption_context = xmlsec.EncryptionContext(manager)
+
+        encrypted_assertion = self._root.find(f"{{{NS_SAML_ASSERTION}}}EncryptedAssertion")
+        encrypted_data = xmlsec.tree.find_child(encrypted_assertion, "EncryptedData", xmlsec.constants.EncNs)
+        decrypted_assertion = encryption_context.decrypt(encrypted_data)
+
+
+        index_of = self._root.index(encrypted_assertion)
+        self._root.remove(encrypted_assertion)
+        self._root.insert(
+                index_of,
+                decrypted_assertion,
+        )
+
     def _get_name_id(self) -> "Element":
         """Get NameID Element"""
+        try:
+            self._decrypt_response()
+        except:
+            pass
         assertion = self._root.find(f"{{{NS_SAML_ASSERTION}}}Assertion")
         if assertion is None:
             raise ValueError("Assertion element not found")
@@ -206,6 +234,10 @@ class ResponseProcessor:
     def get_attributes(self) -> dict[str, list[str] | str]:
         """Get all attributes sent"""
         attributes = {}
+        try:
+            self._decrypt_response()
+        except:
+            pass
         assertion = self._root.find(f"{{{NS_SAML_ASSERTION}}}Assertion")
         if assertion is None:
             # raise ValueError("Assertion element not found")
