@@ -33,7 +33,18 @@ class MetadataProcessor:
         """Get Signing KeyDescriptor, if enabled for the source"""
         if self.source.signing_kp:
             key_descriptor = Element(f"{{{NS_SAML_METADATA}}}KeyDescriptor")
-            key_descriptor.attrib["use"] = "signing"
+            # FIXME: ideally, make signing & encryption available via frontend
+            #
+            # IdP would like to see (in SP's metadata) either two
+            # * <md:KeyDescriptor use="signing">
+            # * <md:KeyDescriptor use="encryption">
+            # key entries OR one
+            # * <md:KeyDescriptor> (which - per default - [would be used for both]
+            # (https://shibboleth.atlassian.net/wiki/spaces/CONCEPT/pages/948470554/SAMLKeysAndCertificates))
+            #
+            # here, we (mis)use the "signing" option from the frontend and implicitly use the default (signing and encryption)
+            #
+            # key_descriptor.attrib["use"] = "signing"
             key_info = SubElement(key_descriptor, f"{{{NS_SIGNATURE}}}KeyInfo")
             x509_data = SubElement(key_info, f"{{{NS_SIGNATURE}}}X509Data")
             x509_certificate = SubElement(x509_data, f"{{{NS_SIGNATURE}}}X509Certificate")
